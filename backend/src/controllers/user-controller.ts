@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import mongoose from 'mongoose'; // Import mongoose to use mongoose.Types.ObjectId
-import User from '../models/user-model';
+import mongoose from 'mongoose';
+import User, { IUser } from '../models/user-model';
 import Post, { IPost } from '../models/post-model';
 
 interface RegisterRequestBody {
@@ -25,6 +25,36 @@ interface UserResponse {
   followers: string[];
   following: string[];
   posts: Partial<IPost>[];
+}
+
+interface LeanUserDocumentPopulated {
+  _id: mongoose.Types.ObjectId;
+  username: string;
+  email: string;
+  profilePicture?: string;
+  bio?: string;
+  gender?: 'male' | 'female';
+  followers: mongoose.Types.ObjectId[];
+  following: mongoose.Types.ObjectId[];
+  posts: IPost[];
+  bookmarks: IPost[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface PopulatedProfileResponse {
+  _id: string;
+  username: string;
+  email: string;
+  profilePicture: string;
+  bio: string;
+  gender?: 'male' | 'female';
+  followers: string[];
+  following: string[];
+  posts: IPost[];
+  bookmarks: IPost[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const register = async (req: Request<{}, {}, RegisterRequestBody>, res: Response): Promise<void> => {
@@ -55,9 +85,8 @@ export const register = async (req: Request<{}, {}, RegisterRequestBody>, res: R
       password: hashedPassword
     });
 
-    // Omit password from response
     const userResponse: UserResponse = {
-      _id: (newUser._id as mongoose.Types.ObjectId).toString(), // Explicitly cast to ObjectId
+      _id: (newUser._id as mongoose.Types.ObjectId).toString(),
       username: newUser.username,
       email: newUser.email,
       profilePicture: newUser.profilePicture || '',
@@ -118,7 +147,7 @@ export const login = async (req: Request<{}, {}, LoginRequestBody>, res: Respons
     }
 
     const token = jwt.sign(
-      { userId: (user._id as mongoose.Types.ObjectId).toString() }, // Explicitly cast to ObjectId and then to string for JWT payload
+      { userId: (user._id as mongoose.Types.ObjectId).toString() },
       process.env.SECRET_KEY,
       { expiresIn: "7d" }
     );
@@ -130,7 +159,7 @@ export const login = async (req: Request<{}, {}, LoginRequestBody>, res: Respons
     );
 
     const userResponse: UserResponse = {
-      _id: (user._id as mongoose.Types.ObjectId).toString(), // Explicitly cast to ObjectId
+      _id: (user._id as mongoose.Types.ObjectId).toString(),
       username: user.username,
       email: user.email,
       profilePicture: user.profilePicture || '',
@@ -167,7 +196,7 @@ export const login = async (req: Request<{}, {}, LoginRequestBody>, res: Respons
 export const logout = async (req: Request, res: Response): Promise<Response> => {
   try {
     return res
-      .cookie("token", "", { 
+      .cookie("token", "", {
         maxAge: 0,
         httpOnly: true,
         sameSite: "strict",
@@ -183,6 +212,54 @@ export const logout = async (req: Request, res: Response): Promise<Response> => 
     return res.status(500).json({
       message: 'Logout failed',
       success: false
+    });
+  }
+};
+
+export const getProfile = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const userId: string = req.params.id;
+
+    const user = await User.findById(userId)
+      .populate({
+        path: 'posts',
+        options: { sort: { createdAt: -1 } }
+      })
+      .populate('bookmarks')
+      .lean() as unknown as LeanUserDocumentPopulated;
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+        success: false
+      });
+    }
+
+    const userResponse: PopulatedProfileResponse = {
+      _id: user._id.toString(),
+      username: user.username,
+      email: user.email,
+      profilePicture: user.profilePicture || '',
+      bio: user.bio || '',
+      gender: user.gender,
+      followers: user.followers.map((id: mongoose.Types.ObjectId) => id.toString()),
+      following: user.following.map((id: mongoose.Types.ObjectId) => id.toString()),
+      posts: user.posts,
+      bookmarks: user.bookmarks,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    return res.status(200).json({
+      user: userResponse,
+      success: true
+    });
+
+  } catch (error: unknown) {
+    console.error('Failed to fetch profile:', error instanceof Error ? error.message : error);
+    return res.status(500).json({
+      message: 'Failed to fetch profile',
+      success: false,
     });
   }
 };
