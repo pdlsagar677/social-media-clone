@@ -1,22 +1,33 @@
-import multer, { Multer } from 'multer';
-import { memoryStorage } from 'multer';
+// src/middlewares/multer.ts
+import multer from 'multer';
+import { Request } from 'express'; // Import Request for clearer typing in fileFilter
 
-// Define the Multer upload configuration with TypeScript types
-const upload: Multer = multer({
-  storage: memoryStorage(),
+// Define a local interface for the file, compatible with Multer's memoryStorage output
+interface MulterFileCompatible {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
+const storage = multer.memoryStorage();
+
+const multerInstance = multer({
+  storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB file size limit (adjust as needed)
-    files: 1 // Limit to 1 file (adjust as needed)
+    fileSize: 5 * 1024 * 1024, // 5MB file size limit
+    files: 1 // Limit to 1 file
   },
-  fileFilter: (req, file, cb) => {
-    // Add your file filtering logic here if needed
-    // Example: only allow certain file types
+  fileFilter: (req: Request, file: MulterFileCompatible, cb: multer.FileFilterCallback) => {
     if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
+      cb(null, true); // Accept the file
     } else {
+      // Corrected: Pass the error directly without the 'false'
       cb(new Error('Only image files are allowed!'));
     }
   }
 });
 
-export default upload;
+export const uploadProfilePicture = multerInstance.single('profilePicture');

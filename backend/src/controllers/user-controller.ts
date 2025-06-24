@@ -4,6 +4,24 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import User, { IUser } from '../models/user-model';
 import Post, { IPost } from '../models/post-model';
+import { v2 as cloudinary } from 'cloudinary';
+import getDataUri from '../utils/datauri';
+
+declare module 'express' {
+  interface Request {
+    id?: string;
+    file?: MulterFileCompatible;
+  }
+}
+
+interface MulterFileCompatible {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
 
 interface RegisterRequestBody {
   username: string;
@@ -57,33 +75,32 @@ interface PopulatedProfileResponse {
   updatedAt: Date;
 }
 
+interface EditProfileRequestBody {
+  bio?: string;
+  gender?: 'male' | 'female';
+}
+
+interface CloudinaryUploadResponse {
+  secure_url: string;
+}
+
 export const register = async (req: Request<{}, {}, RegisterRequestBody>, res: Response): Promise<void> => {
   try {
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
-      res.status(400).json({
-        message: "All fields are required",
-        success: false,
-      });
+      res.status(400).json({ message: "All fields are required", success: false });
       return;
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      res.status(409).json({
-        message: "Email already in use",
-        success: false,
-      });
+      res.status(409).json({ message: "Email already in use", success: false });
       return;
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({
-      username,
-      email,
-      password: hashedPassword
-    });
+    const newUser = await User.create({ username, email, password: hashedPassword });
 
     const userResponse: UserResponse = {
       _id: (newUser._id as mongoose.Types.ObjectId).toString(),
@@ -105,10 +122,7 @@ export const register = async (req: Request<{}, {}, RegisterRequestBody>, res: R
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     console.error('Registration error:', errorMessage);
-    res.status(500).json({
-      message: "Registration failed",
-      success: false
-    });
+    res.status(500).json({ message: "Registration failed", success: false });
   }
 }
 
@@ -117,28 +131,19 @@ export const login = async (req: Request<{}, {}, LoginRequestBody>, res: Respons
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({
-        message: "Email and password are required",
-        success: false,
-      });
+      res.status(400).json({ message: "Email and password are required", success: false });
       return;
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      res.status(401).json({
-        message: "Incorrect email or password",
-        success: false,
-      });
+      res.status(401).json({ message: "Incorrect email or password", success: false });
       return;
     }
 
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
-      res.status(401).json({
-        message: "Incorrect email or password",
-        success: false,
-      });
+      res.status(401).json({ message: "Incorrect email or password", success: false });
       return;
     }
 
@@ -186,12 +191,9 @@ export const login = async (req: Request<{}, {}, LoginRequestBody>, res: Respons
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     console.error('Login error:', errorMessage);
-    res.status(500).json({
-      message: "Login failed",
-      success: false,
-    });
+    res.status(500).json({ message: "Login failed", success: false });
   }
-};
+}
 
 export const logout = async (req: Request, res: Response): Promise<Response> => {
   try {
@@ -203,15 +205,63 @@ export const logout = async (req: Request, res: Response): Promise<Response> => 
         secure: process.env.NODE_ENV === 'production'
       })
       .status(200)
-      .json({
-        message: 'Logged out successfully',
-        success: true
-      });
+      .json({ message: 'Logged out successfully', success: true });
   } catch (error: unknown) {
     console.error('Logout error:', error instanceof Error ? error.message : error);
+    return res.status(500).json({ message: 'Logout failed', success: false });
+  }
+};
+
+export const editProfile = async (req: Request<{}, {}, EditProfileRequestBody>, res: Response): Promise<Response> => {
+  try {
+    const userId: string | undefined = req.id;
+    const { bio, gender } = req.body;
+    const profilePicture: MulterFileCompatible | undefined = req.file;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized: User ID not found in request.', success: false });
+    }
+
+    let cloudResponse: CloudinaryUploadResponse | undefined;
+
+    if (profilePicture) {
+      const fileUri = getDataUri(profilePicture);
+      cloudResponse = await cloudinary.uploader.upload(fileUri);
+    }
+
+    const user = await User.findById(userId).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.', success: false });
+    }
+
+    if (bio !== undefined) {
+      user.bio = bio;
+    }
+    if (gender !== undefined) {
+      user.gender = gender;
+    }
+    if (cloudResponse && cloudResponse.secure_url) {
+      user.profilePicture = cloudResponse.secure_url;
+    }
+
+    await user.save();
+
+    const userResponse: Partial<IUser> = user.toObject();
+    delete userResponse.password;
+
+    return res.status(200).json({
+      message: 'Profile updated successfully.',
+      success: true,
+      user: userResponse
+    });
+
+  } catch (error: unknown) {
+    console.error('Error editing profile:', error);
     return res.status(500).json({
-      message: 'Logout failed',
-      success: false
+      message: 'Failed to update profile.',
+      success: false,
+      error: error instanceof Error ? error.message : 'An unknown error occurred.'
     });
   }
 };
@@ -229,10 +279,7 @@ export const getProfile = async (req: Request, res: Response): Promise<Response>
       .lean() as unknown as LeanUserDocumentPopulated;
 
     if (!user) {
-      return res.status(404).json({
-        message: 'User not found',
-        success: false
-      });
+      return res.status(404).json({ message: 'User not found', success: false });
     }
 
     const userResponse: PopulatedProfileResponse = {
