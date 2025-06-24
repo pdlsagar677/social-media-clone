@@ -1,7 +1,7 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
 // 1. Define the TypeScript interface for the User document
-interface IUser extends Document {
+ export interface IUser extends Document {
   username: string;
   email: string;
   password: string;
@@ -67,4 +67,4 @@ const User: Model<IUser> = mongoose.model<IUser>('User', userSchema);
 
 // 4. Export the Model
 export default User;
-export {IUser};
+export type UserDocument = mongoose.HydratedDocument<IUser>;
