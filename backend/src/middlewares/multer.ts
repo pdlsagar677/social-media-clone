@@ -3,6 +3,7 @@ import multer from 'multer';
 import { Request } from 'express'; // Import Request for clearer typing in fileFilter
 
 // Define a local interface for the file, compatible with Multer's memoryStorage output
+// This interface should be identical to the one in express.d.ts
 interface MulterFileCompatible {
   fieldname: string;
   originalname: string;
@@ -24,10 +25,11 @@ const multerInstance = multer({
     if (file.mimetype.startsWith('image/')) {
       cb(null, true); // Accept the file
     } else {
-      // Corrected: Pass the error directly without the 'false'
+      // Corrected: Pass the error directly without the 'false' argument
       cb(new Error('Only image files are allowed!'));
     }
   }
 });
 
 export const uploadProfilePicture = multerInstance.single('profilePicture');
+export default multerInstance; // Export the instance itself for other uses like .single('image')
