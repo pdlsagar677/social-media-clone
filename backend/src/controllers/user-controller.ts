@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import mongoose from 'mongoose';
+import mongoose, {Types} from 'mongoose';
 import User, { IUser } from '../models/user-model';
 import Post, { IPost } from '../models/post-model';
 import { v2 as cloudinary } from 'cloudinary';
@@ -309,4 +309,114 @@ export const getProfile = async (req: Request, res: Response): Promise<Response>
       success: false,
     });
   }
+};
+
+export const getSuggestedUsers = async (req: Request, res: Response): Promise<Response> => {
+    try {
+        const suggestedUsers: IUser[] = await User.find({ _id: { $ne: req.id } }).select("-password");
+        
+        if (!suggestedUsers || suggestedUsers.length === 0) {
+            return res.status(400).json({
+                message: 'Currently do not have any users',
+            });
+        };
+
+        return res.status(200).json({
+            success: true,
+            users: suggestedUsers
+        });
+    } catch (error: unknown) {
+        console.error(error);
+        
+        // Handle the error appropriately
+        if (error instanceof Error) {
+            return res.status(500).json({
+                message: 'Server error',
+                error: error.message
+            });
+        }
+        
+        return res.status(500).json({
+            message: 'Unknown server error'
+        });
+    }
+};
+
+
+
+export const followOrUnfollow = async (req: Request, res: Response): Promise<Response> => {
+    try {
+        // Validate and convert IDs
+        const whoFollows: string | undefined = req.id;
+        const whomFollowing: string | undefined = req.params.id;
+        
+        if (!whoFollows || !whomFollowing) {
+            return res.status(400).json({
+                message: 'Missing user ID',
+                success: false
+            });
+        }
+
+        // Check if trying to follow self
+        if (whoFollows === whomFollowing) {
+            return res.status(400).json({
+                message: 'You cannot follow/unfollow yourself',
+                success: false
+            });
+        }
+
+        // Convert string IDs to ObjectId
+        const whoFollowsId = new Types.ObjectId(whoFollows);
+        const whomFollowingId = new Types.ObjectId(whomFollowing);
+
+        const user: IUser | null = await User.findById(whoFollowsId);
+        const targetUser: IUser | null = await User.findById(whomFollowingId);
+
+        if (!user || !targetUser) {
+            return res.status(404).json({
+                message: 'User not found',
+                success: false
+            });
+        }
+
+        // Check if already following
+        const isFollowing: boolean = user.following.some(id => id.equals(whomFollowingId));
+        
+        if (isFollowing) {
+            // Unfollow logic
+            await Promise.all([
+                User.updateOne({ _id: whoFollowsId }, { $pull: { following: whomFollowingId } }),
+                User.updateOne({ _id: whomFollowingId }, { $pull: { followers: whoFollowsId } }),
+            ]);
+            return res.status(200).json({ 
+                message: 'Unfollowed successfully', 
+                success: true 
+            });
+        } else {
+            // Follow logic
+            await Promise.all([
+                User.updateOne({ _id: whoFollowsId }, { $push: { following: whomFollowingId } }),
+                User.updateOne({ _id: whomFollowingId }, { $push: { followers: whoFollowsId } }),
+            ]);
+            return res.status(200).json({ 
+                message: 'Followed successfully', 
+                success: true 
+            });
+        }
+    } catch (error: unknown) {
+        console.error('Error in followOrUnfollow:', error);
+        
+        if (error instanceof Error) {
+            return res.status(500).json({
+                message: 'Server error',
+                error: error.message,
+                success: false
+            });
+        }
+        
+        return res.status(500).json({
+            message: 'Unknown server error',
+            success: false
+        });
+    }
 };
