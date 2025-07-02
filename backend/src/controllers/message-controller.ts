@@ -3,7 +3,6 @@ import Conversation from "../models/conversation-model";
 import { getReceiverSocketId, io } from "../socket/socket";
 import Message from "../models/message-model";
 
-// Extend Express Request interface to include custom properties
 interface AuthenticatedRequest extends Request {
   id: string;
 }
@@ -12,10 +11,9 @@ interface SendMessageBody {
   textMessage: string;
 }
 
-// for chatting
+
 export const sendMessage = async (req: Request, res: Response): Promise<Response> => {
   try {
-    // Type assertion after middleware has run
     const authenticatedReq = req as AuthenticatedRequest;
     const senderId = authenticatedReq.id;
     const receiverId = req.params.id;
@@ -39,7 +37,6 @@ export const sendMessage = async (req: Request, res: Response): Promise<Response
       participants: { $all: [senderId, receiverId] }
     });
 
-    // establish the conversation if not started yet.
     if (!conversation) {
       conversation = await Conversation.create({
         participants: [senderId, receiverId]
@@ -58,7 +55,6 @@ export const sendMessage = async (req: Request, res: Response): Promise<Response
 
     await Promise.all([conversation.save(), newMessage.save()]);
 
-    // implement socket io for real time data transfer
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit('newMessage', newMessage);
@@ -79,7 +75,6 @@ export const sendMessage = async (req: Request, res: Response): Promise<Response
 
 export const getMessage = async (req: Request, res: Response): Promise<Response> => {
   try {
-    // Type assertion after middleware has run
     const authenticatedReq = req as AuthenticatedRequest;
     const senderId = authenticatedReq.id;
     const receiverId = req.params.id;

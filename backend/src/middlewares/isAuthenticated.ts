@@ -1,13 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-// Define the structure of the decoded token
 interface DecodedToken {
   userId: string;
-  [key: string]: any; // Allow for other properties
-}
+  [key: string]: any; }
 
-// Extend the Request interface to include the id property
 declare module 'express' {
   interface Request {
     id?: string;
