@@ -1,6 +1,7 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import userRoute from './routes/user-route';
 import postRoute from './routes/post-route';
+import messageRoute from './routes/message-route'
 import dotenv from 'dotenv';
 import connectDB from './utils/db';
 
@@ -18,6 +19,8 @@ app.use(express.json());
 
 app.use('/api/users', userRoute);
 app.use('/api/post', postRoute);
+app.use('/api/message', messageRoute);
+
 
 const startServer = async () => {
   const isDbConnected = await connectDB();
