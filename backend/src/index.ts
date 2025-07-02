@@ -4,7 +4,7 @@ import postRoute from './routes/post-route';
 import messageRoute from './routes/message-route'
 import dotenv from 'dotenv';
 import connectDB from './utils/db';
-
+import cors from 'cors';
 dotenv.config();
 
 const app: Application = express();
@@ -15,8 +15,18 @@ if (isNaN(PORT)) {
   process.exit(1);
 }
 
-app.use(express.json());
 
+const corsOptions = {
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
+
+
+app.use(express.json());
 app.use('/api/users', userRoute);
 app.use('/api/post', postRoute);
 app.use('/api/message', messageRoute);
