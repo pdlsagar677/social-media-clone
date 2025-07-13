@@ -83,7 +83,7 @@ const Signup: React.FC = () => {
             );
             
             if (res.data.success) {
-                navigate("/login");
+                navigate("/home");
                 toast.success(res.data.message);
                 setInput({
                     username: "",

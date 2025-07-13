@@ -57,7 +57,7 @@ const Login: React.FC = () => {
             if (res.data.success) {
                 dispatch(setAuthUser(res.data.user));
                 navigate("/");
-                toast.success(res.data.message);
+                toast.success("Login Successfull");
                 setInput({
                     email: "",
                     password: ""
