@@ -1,8 +1,8 @@
 import './App.css';
 import { Toaster } from 'sonner';
- import Home from './components/Home';
-import Login from './components/Login';
-import Signup from './components/Signup';
+ import Home from './pages/Home';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 function App() {
