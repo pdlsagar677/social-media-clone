@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Profile from './components/Profile';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
 
         <Route path="/" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/profile" element={<Profile />} />
 
       </Routes>
             <Toaster position="top-center" richColors />
