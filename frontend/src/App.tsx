@@ -14,7 +14,7 @@ function App() {
 
         <Route path="/" element={<Signup />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:id" element={<Profile />} />
 
       </Routes>
             <Toaster position="top-center" richColors />
