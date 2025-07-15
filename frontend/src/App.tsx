@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Profile from './components/Profile';
+import ChatPage from './components/ChatPage';
+import CreatePost from './components/CreatePost';
 
 function App() {
   return (
@@ -15,6 +17,9 @@ function App() {
         <Route path="/" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/profile/:id" element={<Profile />} />
+        <Route path="/chatpage" element={<ChatPage />} />
+        <Route path="/createpost" element={<CreatePost />} />
+
 
       </Routes>
             <Toaster position="top-center" richColors />

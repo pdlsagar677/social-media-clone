@@ -1,4 +1,4 @@
-import { setMessages } from "@/redux/chatSlice";
+import { setMessages } from "../redux/chatSlice";
 import axios, { AxiosResponse } from "axios";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";

@@ -1,4 +1,4 @@
-import { setSuggestedUsers } from "@/redux/authSlice";
+import { setSuggestedUsers } from "../redux/authSlice";
 import axios, { AxiosResponse } from "axios";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";

@@ -1,4 +1,4 @@
-import { setPosts } from "@/redux/postSlice";
+import { setPosts } from "../redux/postSlice";
 import axios, { AxiosResponse } from "axios";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
