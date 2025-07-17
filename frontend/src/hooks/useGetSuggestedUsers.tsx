@@ -26,7 +26,7 @@ const useGetSuggestedUsers = (): void => {
         const fetchSuggestedUsers = async (): Promise<void> => {
             try {
                 const res: AxiosResponse<SuggestedUsersApiResponse> = await axios.get(
-                    'http://localhost:5000/api/user/suggested', 
+                    'http://localhost:5000/api/users/suggested', 
                     { withCredentials: true }
                 );
                 if (res.data.success) { 

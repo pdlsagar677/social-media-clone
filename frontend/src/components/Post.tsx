@@ -77,7 +77,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
     const likeOrDislikeHandler = async () => {
         try {
             const action = liked ? 'dislike' : 'like'
-            const res = await axios.get(`http://localhost:3000/api/v1/post/${post._id}/${action}`, { withCredentials: true })
+            const res = await axios.get(`http://localhost:5000/api/post/${post._id}/${action}`, { withCredentials: true })
             console.log(res.data)
             if (res.data.success) {
                 const updatedLikes = liked ? postLike - 1 : postLike + 1
