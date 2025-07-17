@@ -11,6 +11,7 @@ interface User {
   username: string;
   name?: string;
   profilePicture?: string;
+  avatar?: string; // Added avatar as alternative
 }
 
 interface Message {
@@ -33,8 +34,14 @@ interface ChatState {
 
 const ChatPage: React.FC = () => {
     const [textMessage, setTextMessage] = useState<string>("");
-    const { user, suggestedUsers, selectedUser } = useSelector((store: RootState) => store.auth);
-    const { onlineUsers, messages } = useSelector((store: RootState) => store.chat);
+    
+    // Fix: Use separate selectors with null checks and default values
+    const user = useSelector((store: RootState) => store.auth?.user);
+    const suggestedUsers = useSelector((store: RootState) => store.auth?.suggestedUsers || []);
+    const selectedUser = useSelector((store: RootState) => store.auth?.selectedUser);
+    const onlineUsers = useSelector((store: RootState) => store.chat?.onlineUsers || []);
+    const messages = useSelector((store: RootState) => store.chat?.messages || []);
+    
     const dispatch = useDispatch();
 
     const sendMessageHandler = async (receiverId: string) => {

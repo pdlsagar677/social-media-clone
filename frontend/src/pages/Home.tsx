@@ -1,16 +1,23 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import LeftSidebar from '../components/Headerbar'; // Ensure this path is correct relative to MainLayout.tsx
+import React from 'react'
+import Feed from '../components/Feed'
+import { Outlet } from 'react-router-dom'
+import RightSidebar from '../components/RightSidebar'
+import useGetAllPost from '@/hooks/useGetAllPost'
+import useGetSuggestedUsers from '@/hooks/useGetSuggestedUsers'
 
 const Home: React.FC = () => {
-  return (
-    <div>
-      <LeftSidebar/>
-      <div>
-        <Outlet/>
-      </div>
-    </div>
-  );
-};
+    useGetAllPost()
+    useGetSuggestedUsers()
+    
+    return (
+        <div className='flex'>
+            <div className='flex-grow'>
+                <Feed />
+                <Outlet />
+            </div>
+            <RightSidebar />
+        </div>
+    )
+}
 
-export default Home;
+export default Home
