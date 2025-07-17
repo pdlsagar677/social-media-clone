@@ -101,7 +101,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
     const commentHandler = async () => {
         try {
-            const res = await axios.post(`https://instaclone-g9h5.onrender.com/api/v1/post/${post._id}/comment`, { text }, {
+            const res = await axios.post(`https://localhost:5000/api/post/${post._id}/comment`, { text }, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -127,7 +127,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
     const deletePostHandler = async () => {
         try {
-            const res = await axios.delete(`https://instaclone-g9h5.onrender.com/api/v1/post/delete/${post?._id}`, { withCredentials: true })
+            const res = await axios.delete(`https://localhost:5000/api/post/delete/${post?._id}`, { withCredentials: true })
             if (res.data.success) {
                 const updatedPostData = posts.filter((postItem) => postItem?._id !== post?._id)
                 dispatch(setPosts(updatedPostData))
@@ -141,7 +141,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
     const bookmarkHandler = async () => {
         try {
-            const res = await axios.get(`https://instaclone-g9h5.onrender.com/api/v1/post/${post?._id}/bookmark`, { withCredentials: true })
+            const res = await axios.get(`https://localhost:5000/api/post/${post?._id}/bookmark`, { withCredentials: true })
             if (res.data.success) {
                 toast.success(res.data.message)
             }
