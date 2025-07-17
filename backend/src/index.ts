@@ -5,6 +5,7 @@ import messageRoute from './routes/message-route'
 import dotenv from 'dotenv';
 import connectDB from './utils/db';
 import cors from 'cors';
+import cookieParser = require('cookie-parser');
 dotenv.config();
 
 const app: Application = express();
@@ -25,7 +26,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-
+app.use(cookieParser());
 app.use(express.json());
 app.use('/api/users', userRoute);
 app.use('/api/post', postRoute);
