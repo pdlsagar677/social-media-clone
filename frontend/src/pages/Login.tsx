@@ -56,7 +56,7 @@ const Login: React.FC = () => {
             
             if (res.data.success) {
                 dispatch(setAuthUser(res.data.user));
-                navigate("/");
+                navigate("/home");
                 toast.success("Login Successfull");
                 setInput({
                     email: "",
@@ -160,7 +160,7 @@ const Login: React.FC = () => {
                     <span className='text-gray-400 text-sm'>
                         Don't have an account?{' '}
                         <Link 
-                            to="/" 
+                            to="/signup" 
                             className='text-orange-500 hover:text-orange-400 font-medium hover:underline transition-colors duration-200'
                         >
                             Sign Up

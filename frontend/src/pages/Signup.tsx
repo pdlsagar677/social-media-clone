@@ -83,7 +83,7 @@ const Signup: React.FC = () => {
             );
             
             if (res.data.success) {
-                navigate("/home");
+                navigate("/home"); // Changed from "/" to "/home"
                 toast.success(res.data.message);
                 setInput({
                     username: "",
@@ -107,7 +107,7 @@ const Signup: React.FC = () => {
 
     useEffect(() => {
         if (user) {
-            navigate("/");
+            navigate("/home"); // Changed from "/" to "/home"
         }
     }, [user, navigate]);
 
