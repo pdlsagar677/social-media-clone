@@ -8,11 +8,10 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: [process.env.URL as string, "http://localhost:8000"],
+        origin: (process.env.SOCKET_URL as string).split(','),
         methods: ['GET', 'POST']
     }
 });
-
 // Define types for our socket map
 interface UserSocketMap {
     [userId: string]: string; // Maps user ID (string) to socket ID (string)
