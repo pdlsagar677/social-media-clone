@@ -34,7 +34,7 @@ const useGetUserProfile = (userId: string | undefined): void => {
         const fetchUserProfile = async (): Promise<void> => {
             try {
                 const res: AxiosResponse<UserProfileApiResponse> = await axios.get(
-                    `http://localhost:5000/api/users/:id/profile`, 
+                    `http://localhost:5000/api/users/${userId}/profile`, 
                     { withCredentials: true }
                 );
                 if (res.data.success) { 

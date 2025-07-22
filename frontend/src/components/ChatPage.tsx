@@ -6,36 +6,39 @@ import { setMessages } from '../redux/chatSlice';
 import axios from 'axios';
 import { RootState } from '../redux/store';
 
+// Updated interfaces to match Redux store
 interface User {
   id: string;
-  username: string;
-  name?: string;
-  profilePicture?: string;
-  avatar?: string; // Added avatar as alternative
+  name: string;
+  email: string;
+  avatar?: string;
+  username?: string;
+  profilePicture?: string; // Keep for backward compatibility
 }
 
 interface Message {
-  _id: string;
-  sender: string;
-  text: string;
-  createdAt: string;
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  timestamp: Date | string;
+  createdAt?: Date | string;
+  // Keep old fields for backward compatibility
+  _id?: string;
+  sender?: string;
+  text?: string;
 }
 
-interface AuthState {
-  user: User | null;
-  suggestedUsers: User[];
-  selectedUser: User | null;
-}
-
-interface ChatState {
-  onlineUsers: string[];
-  messages: Message[];
+// API Response interface
+interface SendMessageResponse {
+  success: boolean;
+  message: Message;
 }
 
 const ChatPage: React.FC = () => {
     const [textMessage, setTextMessage] = useState<string>("");
     
-    // Fix: Use separate selectors with null checks and default values
+    // Updated selectors to match Redux store structure
     const user = useSelector((store: RootState) => store.auth?.user);
     const suggestedUsers = useSelector((store: RootState) => store.auth?.suggestedUsers || []);
     const selectedUser = useSelector((store: RootState) => store.auth?.selectedUser);
@@ -48,21 +51,23 @@ const ChatPage: React.FC = () => {
         if (!textMessage.trim()) return;
 
         try {
-            const res = await axios.post(`http://localhost:5000/api/message/send/${receiverId}`,
-                { textMessage },
+            const res = await axios.post<SendMessageResponse>(
+                `http://localhost:5000/api/message/send/${receiverId}`,
+                { content: textMessage },
                 {
                     headers: {
-                        'Content-Type': 'application/json'
+                        "Content-Type": "application/json",
                     },
-                    withCredentials: true
+                    withCredentials: true,
                 }
             );
-            if (res.data.success && res.data.newMessage) {
-                dispatch(setMessages([...messages, res.data.newMessage as Message]));
+
+            if (res.data.success && res.data.message) {
+                dispatch(setMessages([...messages, res.data.message]));
                 setTextMessage("");
             }
-        } catch (error) {
-            console.error("Error sending message:", error);
+        } catch (error: any) {
+            console.error("Error sending message:", error.response?.data || error.message);
         }
     };
 
@@ -79,7 +84,8 @@ const ChatPage: React.FC = () => {
                 <div className='overflow-y-auto h-[80vh]'>
                     {suggestedUsers && suggestedUsers.length > 0 ? (
                         suggestedUsers.map((suggestedUser) => {
-                            const isOnline = onlineUsers.includes(suggestedUser.id);
+                            // Check if user is online (onlineUsers is now User[], not string[])
+                            const isOnline = onlineUsers.some(onlineUser => onlineUser.id === suggestedUser.id);
                             return (
                                 <div
                                     key={suggestedUser.id}
@@ -88,7 +94,7 @@ const ChatPage: React.FC = () => {
                                 >
                                     <div className='relative'>
                                         <div className='w-14 h-14 rounded-full overflow-hidden bg-gray-200'>
-                                            {suggestedUser.profilePicture || suggestedUser.avatar ? (
+                                            {(suggestedUser.profilePicture || suggestedUser.avatar) ? (
                                                 <img
                                                     src={suggestedUser.profilePicture || suggestedUser.avatar}
                                                     alt={suggestedUser.username || suggestedUser.name || 'User'}
@@ -96,7 +102,7 @@ const ChatPage: React.FC = () => {
                                                 />
                                             ) : (
                                                 <div className='w-full h-full flex items-center justify-center text-gray-500'>
-                                                    {suggestedUser.username?.charAt(0).toUpperCase() || suggestedUser.name?.charAt(0).toUpperCase() || 'U'}
+                                                    {(suggestedUser.username?.charAt(0) || suggestedUser.name?.charAt(0) || 'U').toUpperCase()}
                                                 </div>
                                             )}
                                         </div>
@@ -121,7 +127,7 @@ const ChatPage: React.FC = () => {
                 <section className='flex-1 flex flex-col h-full bg-white rounded-lg shadow-sm ml-4'>
                     <div className='flex gap-3 items-center px-4 py-3 border-b sticky top-0 bg-white z-10'>
                         <div className='w-10 h-10 rounded-full overflow-hidden bg-gray-200'>
-                            {selectedUser.profilePicture || selectedUser.avatar ? (
+                            {(selectedUser.profilePicture || selectedUser.avatar) ? (
                                 <img
                                     src={selectedUser.profilePicture || selectedUser.avatar}
                                     alt={selectedUser.username || selectedUser.name || 'User'}
@@ -129,7 +135,7 @@ const ChatPage: React.FC = () => {
                                 />
                             ) : (
                                 <div className='w-full h-full flex items-center justify-center text-gray-500'>
-                                    {selectedUser.username?.charAt(0).toUpperCase() || selectedUser.name?.charAt(0).toUpperCase() || 'U'}
+                                    {(selectedUser.username?.charAt(0) || selectedUser.name?.charAt(0) || 'U').toUpperCase()}
                                 </div>
                             )}
                         </div>
@@ -140,16 +146,23 @@ const ChatPage: React.FC = () => {
 
                     <div className='flex-1 overflow-y-auto p-4 space-y-2'>
                         {messages && messages.length > 0 ? (
-                            messages.map((message) => (
-                                <div
-                                    key={message._id}
-                                    className={`flex ${message.sender === user?.id ? 'justify-end' : 'justify-start'}`}
-                                >
-                                    <div className={`rounded-lg py-2 px-3 max-w-xs ${message.sender === user?.id ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
-                                        {message.text}
+                            messages.map((message, index) => {
+                                // Handle both old and new message formats
+                                const messageId = message.id || message._id;
+                                const messageSender = message.senderId || message.sender;
+                                const messageText = message.content || message.text;
+                                
+                                return (
+                                    <div
+                                        key={messageId || `message-${index}`}
+                                        className={`flex ${messageSender === user?.id ? 'justify-end' : 'justify-start'}`}
+                                    >
+                                        <div className={`rounded-lg py-2 px-3 max-w-xs ${messageSender === user?.id ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
+                                            {messageText}
+                                        </div>
                                     </div>
-                                </div>
-                            ))
+                                );
+                            })
                         ) : (
                             <div className='p-4 text-center text-gray-500'>No messages yet. Start the conversation!</div>
                         )}
