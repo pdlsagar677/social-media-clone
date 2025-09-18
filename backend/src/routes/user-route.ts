@@ -8,7 +8,7 @@ router.post('/register', register);
 router.post('/login', login);
 router.get('/logout', logout);
 router.get('/:id/profile', isAuthenticated , getProfile);
-router.get('/profile/edit', isAuthenticated , uploadProfilePicture);
+router.post('/profile/edit', isAuthenticated , uploadProfilePicture);
 router.get('/suggested', isAuthenticated , getSuggestedUsers);
 router.post('/followorunfollow/:id', isAuthenticated , followOrUnfollow);
 

@@ -1,3 +1,4 @@
+// src/redux/store.ts
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import authSlice from "./authSlice";
 import postSlice from './postSlice';
@@ -19,6 +20,9 @@ const persistConfig = {
     key: 'root',
     version: 1,
     storage,
+    // Add 'socketio' to the blacklist to prevent it from being persisted
+    // as it is non-serializable.
+    blacklist: ['socketio'] 
 };
 
 const rootReducer = combineReducers({
@@ -37,8 +41,8 @@ export const store = configureStore({
         getDefaultMiddleware({
             serializableCheck: {
                 ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-                ignoredActionsPaths: ['meta.arg', 'payload.timestamp'],
-                ignoredPaths: ['items.dates'],
+                // We are still ignoring these for the persist/rehydrate process
+                ignoredPaths: ['payload.socket'], 
             },
         }),
 });

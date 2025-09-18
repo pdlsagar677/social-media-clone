@@ -1,6 +1,8 @@
+// src/redux/chatSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface User {
+// Export the interface
+export interface User {
   id: string;
   name: string;
   email: string;

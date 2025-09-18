@@ -1,43 +1,53 @@
-import { Server, Socket } from "socket.io";
-import express from "express";
-import http from "http";
+import { Server, Socket } from 'socket.io';
 
-const app = express();
-
-const server = http.createServer(app);
-
-const io = new Server(server, {
-    cors: {
-        origin: (process.env.SOCKET_URL as string).split(','),
-        methods: ['GET', 'POST']
-    }
-});
-// Define types for our socket map
 interface UserSocketMap {
-    [userId: string]: string; // Maps user ID (string) to socket ID (string)
+  [userId: string]: string;
 }
 
 const userSocketMap: UserSocketMap = {};
+let io: Server | null = null;
 
-export const getReceiverSocketId = (receiverId: string): string | undefined => {
-    return userSocketMap[receiverId];
-};
+/**
+ * Initialize Socket.IO with the HTTP server
+ */
+export const initSocket = (server: any): Server => {
+  io = new Server(server, {
+    cors: {
+      origin: process.env.FRONTEND_URL,
+      methods: ['GET', 'POST'],
+      credentials: true,
+    },
+  });
 
-io.on('connection', (socket: Socket) => {
+  io.on('connection', (socket: Socket) => {
     const userId = socket.handshake.query.userId as string;
-    
-    if (userId && typeof userId === 'string') {
-        userSocketMap[userId] = socket.id;
+
+    if (userId) {
+      userSocketMap[userId] = socket.id;
+      console.log(`${userId} connected`);
     }
 
-    io.emit('getOnlineUsers', Object.keys(userSocketMap));
+    io?.emit('getOnlineUsers', Object.keys(userSocketMap));
 
     socket.on('disconnect', () => {
-        if (userId && typeof userId === 'string') {
-            delete userSocketMap[userId];
-        }
-        io.emit('getOnlineUsers', Object.keys(userSocketMap));
+      if (userId) {
+        delete userSocketMap[userId];
+        console.log(`${userId} disconnected`);
+      }
+      io?.emit('getOnlineUsers', Object.keys(userSocketMap));
     });
-});
+  });
 
-export { app, server, io };
+  return io;
+};
+
+/**
+ * Get Socket.IO instance
+ */
+export const getIO = (): Server | null => io;
+
+/**
+ * Get socket ID of a specific user
+ */
+export const getReceiverSocketId = (receiverId: string): string | undefined =>
+  userSocketMap[receiverId];

@@ -1,6 +1,8 @@
+// src/redux/rtnSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface LikeNotification {
+// Export the interface
+export interface LikeNotification {
   id?: string;
   userId: string;
   type: 'like' | 'dislike';
