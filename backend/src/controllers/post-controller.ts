@@ -4,7 +4,7 @@ import cloudinary from "../utils/cloudinary";
 import Post from "../models/post-model";
 import User from "../models/user-model";
 import Comment from "../models/comment-model";
-import { getReceiverSocketId, io } from "../socket/socket";
+import { getReceiverSocketId, getIO } from "../socket/socket";
 
 // Extend Express Request interface to include custom properties
 interface AuthenticatedRequest extends Request {
@@ -150,7 +150,7 @@ export const likePost = async (req: AuthenticatedRequest, res: Response): Promis
       };
       const postOwnerSocketId = getReceiverSocketId(postOwnerId);
       if (postOwnerSocketId) {
-        io.to(postOwnerSocketId).emit('notification', notification);
+        getIO().to(postOwnerSocketId).emit('notification', notification);
       }
     }
 
@@ -188,7 +188,7 @@ export const dislikePost = async (req: AuthenticatedRequest, res: Response): Pro
       };
       const postOwnerSocketId = getReceiverSocketId(postOwnerId);
       if (postOwnerSocketId) {
-        io.to(postOwnerSocketId).emit('notification', notification);
+        getIO().to(postOwnerSocketId).emit('notification', notification);
       }
     }
 

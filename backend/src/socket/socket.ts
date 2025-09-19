@@ -1,4 +1,4 @@
-import { Server, Socket } from 'socket.io';
+import { Server, Socket } from "socket.io";
 
 interface UserSocketMap {
   [userId: string]: string;
@@ -14,12 +14,12 @@ export const initSocket = (server: any): Server => {
   io = new Server(server, {
     cors: {
       origin: process.env.FRONTEND_URL,
-      methods: ['GET', 'POST'],
+      methods: ["GET", "POST"],
       credentials: true,
     },
   });
 
-  io.on('connection', (socket: Socket) => {
+  io.on("connection", (socket: Socket) => {
     const userId = socket.handshake.query.userId as string;
 
     if (userId) {
@@ -27,14 +27,14 @@ export const initSocket = (server: any): Server => {
       console.log(`${userId} connected`);
     }
 
-    io?.emit('getOnlineUsers', Object.keys(userSocketMap));
+    io?.emit("getOnlineUsers", Object.keys(userSocketMap));
 
-    socket.on('disconnect', () => {
+    socket.on("disconnect", () => {
       if (userId) {
         delete userSocketMap[userId];
         console.log(`${userId} disconnected`);
       }
-      io?.emit('getOnlineUsers', Object.keys(userSocketMap));
+      io?.emit("getOnlineUsers", Object.keys(userSocketMap));
     });
   });
 
@@ -44,7 +44,12 @@ export const initSocket = (server: any): Server => {
 /**
  * Get Socket.IO instance
  */
-export const getIO = (): Server | null => io;
+export const getIO = (): Server => {
+  if (!io) {
+    throw new Error("Socket.io not initialized. Call initSocket first.");
+  }
+  return io;
+};
 
 /**
  * Get socket ID of a specific user

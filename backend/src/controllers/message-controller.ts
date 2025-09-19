@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import Conversation from "../models/conversation-model";
-import { getReceiverSocketId, io } from "../socket/socket";
+import { getReceiverSocketId, getIO } from "../socket/socket";
 import Message from "../models/message-model";
 
 interface AuthenticatedRequest extends Request {
@@ -57,7 +57,7 @@ export const sendMessage = async (req: Request, res: Response): Promise<Response
 
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit('newMessage', newMessage);
+      getIO().to(receiverSocketId).emit('newMessage', newMessage);
     }
 
     return res.status(201).json({
